@@ -26,6 +26,9 @@ Também é possível executar sem ativar o ambiente virtual:
 
 O banco SQLite e os dados de clientes são locais e não são enviados ao Git.
 Para alterar o endereço do banco SQLite, configure `AGENDA_DATABASE` com o
-caminho desejado.
+caminho desejado. No Vercel, a aplicação usa `/tmp/agenda_clientes.db` por
+padrão porque o diretório do código não aceita gravações. Esse armazenamento
+temporário não é persistente entre implantações ou reinicializações; para
+manter os cadastros em produção, configure um banco de dados persistente.
 
 O arquivo `agenda_clientes.py` contém a interface desktop Tkinter anterior.

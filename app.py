@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import tempfile
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator
@@ -13,10 +14,19 @@ from flask import Flask, abort, flash, redirect, render_template, request, url_f
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATABASE = Path(os.environ.get("AGENDA_DATABASE", BASE_DIR / "agenda_clientes.db"))
+DATABASE_PADRAO = (
+    Path(tempfile.gettempdir()) / "agenda_clientes.db"
+    if os.environ.get("VERCEL")
+    else BASE_DIR / "agenda_clientes.db"
+)
+DATABASE = Path(os.environ.get("AGENDA_DATABASE", DATABASE_PADRAO))
 LEGACY_DATA_FILE = BASE_DIR / "clientes.json"
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_folder=None if os.environ.get("VERCEL") else str(BASE_DIR / "public"),
+    static_url_path="",
+)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "agenda-facil-local-dev")
 
 
