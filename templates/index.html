@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgendaFácil | Clientes</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-icon">A</span><strong>Agenda<span>Fácil</span></strong></div>
+    <nav aria-label="Menu principal">
+      <a class="nav-item" href="#"><span>◉</span> Agenda</a>
+      <a class="nav-item active" href="{{ url_for('inicio') }}"><span>☰</span> Clientes</a>
+      <a class="nav-item" href="#"><span>◆</span> Serviços</a>
+      <a class="nav-item" href="#"><span>⚙</span> Configurações</a>
+    </nav>
+    <div class="sidebar-user"><span class="user-avatar">A</span><span><strong>Administrador</strong><small>AgendaFácil</small></span></div>
+  </aside>
+
+  <main class="main">
+    <header class="page-header">
+      <div>
+        <span class="eyebrow">03 • CLIENTES</span>
+        <h1>Clientes</h1>
+        <p>Cadastre, consulte e mantenha seus clientes organizados.</p>
+      </div>
+      <a class="button button-green" href="{{ url_for('novo_cliente') }}">NOVO CLIENTE</a>
+    </header>
+
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+      {% if mensagens %}
+        {% for categoria, mensagem in mensagens %}
+          <p class="notice {{ categoria }}">{{ mensagem }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <section class="summary" aria-label="Resumo de clientes">
+      <article class="summary-card accent-blue"><span>CLIENTES CADASTRADOS</span><strong>{{ total }}</strong><small>Na sua agenda</small></article>
+      <article class="summary-card accent-green"><span>COM TELEFONE</span><strong>{{ total_telefone }}</strong><small>Contato disponível</small></article>
+      <article class="summary-card accent-yellow"><span>COM E-MAIL</span><strong>{{ total_email }}</strong><small>Contato digital</small></article>
+    </section>
+
+    <section class="client-card">
+      <div class="list-heading"><h2><span aria-hidden="true">☰</span> Lista de clientes</h2><span>{{ total }} {% if total == 1 %}cliente{% else %}clientes{% endif %}</span></div>
+      <div class="client-list">
+        {% for cliente in clientes %}
+          {% set cores = ["blue", "green", "yellow", "red"] %}
+          <article class="client-row">
+            <span class="row-accent {{ cores[loop.index0 % 4] }}"></span>
+            <span class="avatar {{ cores[loop.index0 % 4] }}">{{ cliente.nome.split() | map('first') | join('') | upper | truncate(2, True, '') }}</span>
+            <button
+              class="client-select"
+              type="button"
+              data-client-name="{{ cliente.nome }}"
+              data-phone="{{ cliente.telefone }}"
+              data-email="{{ cliente.email }}"
+              data-observations="{{ cliente.observacoes }}"
+              data-edit-url="{{ url_for('editar_cliente', cliente_id=cliente.id) }}"
+              data-delete-url="{{ url_for('excluir_cliente', cliente_id=cliente.id) }}"
+              aria-pressed="false"
+            >
+              <span class="client-info">
+                <strong>{{ cliente.nome }}</strong>
+                <span>{{ cliente.telefone }}{% if cliente.email %}<span class="dot">•</span>{{ cliente.email }}{% endif %}</span>
+              </span>
+            </button>
+            <details class="actions">
+              <summary aria-label="Ações de {{ cliente.nome }}">⋮</summary>
+              <div class="action-menu">
+                <a href="{{ url_for('editar_cliente', cliente_id=cliente.id) }}">Editar cliente</a>
+                <form class="confirm-delete" method="post" action="{{ url_for('excluir_cliente', cliente_id=cliente.id) }}" data-client-name="{{ cliente.nome }}">
+                  <button type="submit">Excluir cliente</button>
+                </form>
+              </div>
+            </details>
+          </article>
+        {% else %}
+          <div class="empty-state">Nenhum cliente cadastrado. Use “NOVO CLIENTE” para começar.</div>
+        {% endfor %}
+      </div>
+
+      {% if clientes %}
+        <div class="selected-details" aria-live="polite">
+          <span data-selected-placeholder>Selecione um cliente para ver os detalhes.</span>
+          <div data-selected-content hidden>
+            <strong data-selected-name></strong>
+            <span data-selected-contact></span>
+            <span data-selected-observations></span>
+          </div>
+        </div>
+        <footer class="list-footer" data-selected-actions hidden>
+          <span>Use o menu ⋮ para editar ou excluir um cliente.</span>
+          <div>
+            <a class="button button-gray" data-edit-selected href="#">EDITAR</a>
+            <form class="confirm-delete" method="post" action="#" data-delete-selected data-client-name="">
+              <button class="button button-red" type="submit">EXCLUIR</button>
+            </form>
+          </div>
+        </footer>
+      {% endif %}
+    </section>
+  </main>
+
+  {% if formulario_aberto %}
+    <div class="modal-backdrop">
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <a class="close-button" href="{{ url_for('inicio') }}" aria-label="Fechar">×</a>
+        <span class="eyebrow">{{ "EDITAR CLIENTE" if cliente_edicao else "NOVO CLIENTE" }}</span>
+        <h2 id="modal-title">{{ "Editar cliente" if cliente_edicao else "Novo cliente" }}</h2>
+        <p class="modal-description">{{ "Atualize as informações do cliente." if cliente_edicao else "Preencha as informações para adicionar um novo cliente." }}</p>
+        {% if erro %}<p class="form-error">{{ erro }}</p>{% endif %}
+        <form method="post" action="{{ url_for('salvar_edicao', cliente_id=cliente_edicao.id) if cliente_edicao else url_for('criar_cliente') }}">
+          <label for="nome">Nome completo *</label>
+          <input class="rounded-field" id="nome" name="nome" type="text" required autofocus value="{{ valores.get('nome', cliente_edicao.nome if cliente_edicao else '') }}">
+          <label for="telefone">Telefone *</label>
+          <input class="rounded-field" id="telefone" name="telefone" type="tel" required value="{{ valores.get('telefone', cliente_edicao.telefone if cliente_edicao else '') }}">
+          <label for="email">E-mail</label>
+          <input class="rounded-field" id="email" name="email" type="email" value="{{ valores.get('email', cliente_edicao.email if cliente_edicao else '') }}">
+          <label for="observacoes">Observações</label>
+          <textarea class="rounded-field rounded-textarea" id="observacoes" name="observacoes">{{ valores.get('observacoes', cliente_edicao.observacoes if cliente_edicao else '') }}</textarea>
+          <button class="button button-blue submit-button" type="submit">{{ "SALVAR ALTERAÇÕES" if cliente_edicao else "CRIAR CLIENTE" }}</button>
+        </form>
+      </section>
+    </div>
+  {% endif %}
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>

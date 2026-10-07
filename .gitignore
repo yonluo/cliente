@@ -1,2 +1,6 @@
 __pycache__/
 clientes.json
+agenda_clientes.db
+agenda_clientes.db-shm
+agenda_clientes.db-wal
+.venv/
